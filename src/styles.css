@@ -294,8 +294,8 @@ label.check { display: flex; align-items: center; gap: 8px; }
 .form-senha h3 { font-size: 18px; }
 .conta small { color: var(--tinta-2); }
 
-.titulo-input { font-family: var(--display); font-size: 24px; font-weight: 700; border: none; border-bottom: 2px solid var(--linha); border-radius: 0; padding: 6px 0; }
-.titulo-input:focus { box-shadow: none; border-color: var(--tinta); }
+.titulo-input { font-family: var(--display); font-size: 22px; font-weight: 700; border: none; border-bottom: 2px solid var(--linha); border-radius: 0; padding: 6px 0; }
+.titulo-input:focus, .titulo-input:focus-visible { box-shadow: none; outline: none; border-color: var(--tinta); }
 .linha-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .meta { font-size: 13px; color: var(--tinta-3); margin: 0; }
 .acoes { display: flex; gap: 8px; align-items: center; }
@@ -304,6 +304,27 @@ label.check { display: flex; align-items: center; gap: 8px; }
 .modal.ajuda p { margin: 0; color: var(--tinta-2); }
 .modal.ajuda ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
 .icone-ios { display: inline-block; border: 1px solid var(--linha); border-radius: 4px; padding: 0 4px; }
+
+/* ---------- janela do evento: cabe na tela do celular ---------- */
+.modal { padding-bottom: 0; gap: 12px; overflow-x: hidden; }
+.modal > *, .linha-2 > *, .modal label { min-width: 0; }
+.modal input[type='datetime-local'], .modal input[type='date'] {
+  -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; min-height: 46px; text-align: left;
+}
+.modal input::-webkit-date-and-time-value { text-align: left; }
+.modal .acoes {
+  position: sticky; bottom: 0; z-index: 2; margin: 4px -20px 0; background: var(--superficie);
+  padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--linha);
+}
+.mais-campos { display: grid; gap: 12px; }
+.mais-campos:not([open]) { gap: 0; }
+.mais-campos > summary { cursor: pointer; font-size: 15px; font-weight: 600; color: var(--tinta-2); list-style: none; display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.mais-campos > summary::-webkit-details-marker { display: none; }
+.mais-campos > summary::before { content: '+'; width: 22px; height: 22px; border-radius: 50%; background: var(--fundo); display: grid; place-items: center; font-size: 16px; }
+.mais-campos[open] > summary::before { content: '−'; }
+@media (max-width: 520px) {
+  .modal .linha-2 { grid-template-columns: 1fr; gap: 12px; }
+}
 
 @keyframes subir { from { transform: translateY(40px); opacity: 0; } }
 @keyframes escurecer { from { background: rgba(29, 33, 53, 0); } }

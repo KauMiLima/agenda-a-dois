@@ -143,14 +143,17 @@ export default function EventModal({ evento, agendas, perfis, onSalvar, onApagar
           </label>
         )}
 
-        <label>
-          Local
-          <input value={f.local} onChange={set('local')} placeholder="Opcional" />
-        </label>
-        <label>
-          Observações
-          <textarea rows={3} value={f.descricao} onChange={set('descricao')} placeholder="Opcional" />
-        </label>
+        <details className="mais-campos" open={Boolean(evento.local || evento.descricao)}>
+          <summary>Local e observações</summary>
+          <label>
+            Local
+            <input value={f.local} onChange={set('local')} placeholder="Opcional" />
+          </label>
+          <label>
+            Observações
+            <textarea rows={3} value={f.descricao} onChange={set('descricao')} placeholder="Opcional" />
+          </label>
+        </details>
 
         {criador && <p className="meta">Criado por {criador.nome}</p>}
         {erro && <p className="msg erro">{erro}</p>}
