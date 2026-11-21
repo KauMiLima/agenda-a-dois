@@ -81,6 +81,15 @@ export default function Agenda({ usuario }) {
       });
   }, [agendaLivre?.id, de, ate, eventos]);
 
+  // guarda o fuso horário deste aparelho no perfil (as notificações saem no horário de cada um)
+  const meuPerfil = cal.perfis[usuario.id];
+  useEffect(() => {
+    const fuso = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (meuPerfil && meuPerfil.fuso !== undefined && meuPerfil.fuso !== fuso) {
+      supabase.from('profiles').update({ fuso }).eq('id', usuario.id).then(() => {});
+    }
+  }, [meuPerfil?.fuso]);
+
   const livres = useMemo(
     () => (agendaLivre ? horariosLivres(ocupados, de, 7, opcoesLivre) : []),
     [ocupados, de, opcoesLivre, agendaLivre]
@@ -267,7 +276,16 @@ export default function Agenda({ usuario }) {
         />
       )}
 
-      {menu && <AccountSheet usuario={usuario} nome={meuNome} avisar={avisar} onFechar={() => setMenu(false)} />}
+      {menu && (
+        <AccountSheet
+          usuario={usuario}
+          nome={meuNome}
+          perfil={cal.perfis[usuario.id]}
+          onPerfilSalvo={cal.recarregar}
+          avisar={avisar}
+          onFechar={() => setMenu(false)}
+        />
+      )}
 
       {modal && (
         <EventModal

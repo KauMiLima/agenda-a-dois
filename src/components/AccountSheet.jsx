@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 // Folha da conta: dados do usuário, trocar senha e sair
-export default function AccountSheet({ usuario, nome, avisar, onFechar }) {
+export default function AccountSheet({ usuario, nome, perfil, onPerfilSalvo, avisar, onFechar }) {
   const [trocando, setTrocando] = useState(false);
   const [senha, setSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
@@ -39,6 +39,8 @@ export default function AccountSheet({ usuario, nome, avisar, onFechar }) {
             <small>{usuario.email}</small>
           </span>
         </div>
+
+        <Notificacoes usuario={usuario} perfil={perfil} onSalvo={onPerfilSalvo} avisar={avisar} />
 
         {!trocando ? (
           <button className="opcao-conta" onClick={() => setTrocando(true)}>
@@ -98,6 +100,88 @@ export default function AccountSheet({ usuario, nome, avisar, onFechar }) {
         </div>
       </div>
     </div>
+  );
+}
+
+const HORAS = Array.from({ length: 24 }, (_, h) => h);
+
+// Preferências de notificação DESTA pessoa (cada usuário tem as suas)
+function Notificacoes({ usuario, perfil, onSalvo, avisar }) {
+  const [salvando, setSalvando] = useState(null);
+  const pronto = perfil && perfil.notif_lembretes !== undefined;
+
+  async function salvar(campos, chave) {
+    setSalvando(chave);
+    const { error } = await supabase.from('profiles').update(campos).eq('id', usuario.id);
+    setSalvando(null);
+    if (error) return avisar('Não foi possível salvar: ' + error.message);
+    await onSalvo?.();
+  }
+
+  if (!pronto) {
+    return <p className="msg erro">Para escolher suas notificações, rode o arquivo supabase/notificacoes.sql no Supabase.</p>;
+  }
+
+  const temSilencio = perfil.silencio_inicio != null && perfil.silencio_fim != null;
+
+  return (
+    <section className="notif">
+      <h3>Suas notificações</h3>
+      <p className="dica">Valem só para você. Seu par escolhe as próprias no celular.</p>
+
+      <Interruptor
+        titulo="Lembretes dos eventos"
+        texto="Aviso antes de cada evento, no tempo escolhido em cada um."
+        ligado={perfil.notif_lembretes}
+        salvando={salvando === 'lembretes'}
+        onMudar={(v) => salvar({ notif_lembretes: v }, 'lembretes')}
+      />
+      <Interruptor
+        titulo="Quando seu par adicionar algo"
+        texto="Aviso quando alguém cria um evento numa agenda compartilhada com você."
+        ligado={perfil.notif_par}
+        salvando={salvando === 'par'}
+        onMudar={(v) => salvar({ notif_par: v }, 'par')}
+      />
+      <Interruptor
+        titulo="Silêncio à noite"
+        texto="Não receber avisos do par nesse horário. Os lembretes continuam chegando."
+        ligado={temSilencio}
+        salvando={salvando === 'silencio'}
+        onMudar={(v) => salvar(v ? { silencio_inicio: 22, silencio_fim: 7 } : { silencio_inicio: null, silencio_fim: null }, 'silencio')}
+      />
+      {temSilencio && (
+        <div className="linha-2 silencio">
+          <label>
+            Das
+            <select value={perfil.silencio_inicio} onChange={(e) => salvar({ silencio_inicio: Number(e.target.value) }, 'silencio')}>
+              {HORAS.map((h) => <option key={h} value={h}>{h}h</option>)}
+            </select>
+          </label>
+          <label>
+            Até
+            <select value={perfil.silencio_fim} onChange={(e) => salvar({ silencio_fim: Number(e.target.value) }, 'silencio')}>
+              {HORAS.map((h) => <option key={h} value={h}>{h}h</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Interruptor({ titulo, texto, ligado, salvando, onMudar }) {
+  return (
+    <label className="interruptor">
+      <span>
+        <strong>{titulo}</strong>
+        <small>{texto}</small>
+      </span>
+      <span className="chave-wrap">
+        {salvando && <span className="girando" />}
+        <input type="checkbox" role="switch" className="chave" checked={ligado} disabled={salvando} onChange={(e) => onMudar(e.target.checked)} />
+      </span>
+    </label>
   );
 }
 

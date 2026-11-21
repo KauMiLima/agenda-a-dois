@@ -73,7 +73,7 @@ As notificações são enviadas pelo servidor: a cada minuto o Supabase verifica
 
 ### Passo a passo
 
-1. **Banco:** no SQL Editor, rode `supabase/push.sql` (depois do `schema.sql`).
+1. **Banco:** no SQL Editor, rode `supabase/push.sql` e depois `supabase/notificacoes.sql` (preferências de cada usuário).
 2. **Segredos e funções** (no terminal, na pasta do projeto):
    ```bash
    npx supabase login
