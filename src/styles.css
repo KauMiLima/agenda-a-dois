@@ -431,6 +431,35 @@ details.ajustes:not(.cartao) { border-top: 1px solid var(--linha); padding-top: 
 .agenda-item > span:last-child { display: grid; }
 .agenda-sub { font-size: 13px; color: var(--tinta-3); }
 
+/* ---------- semana em lista (celular) ---------- */
+.semana-lista { max-width: 640px; margin: 0 auto; padding: 0 18px; }
+.semana-separador { margin: 18px 0 4px; font-size: 13px; font-weight: 600; color: var(--tinta-3); }
+.semana-lista > div:first-child .semana-separador { margin-top: 4px; }
+.sl-dia { display: grid; grid-template-columns: 48px 1fr; gap: 12px; padding: 10px 0; border-top: 1px solid var(--linha); }
+.sl-dia.passou { opacity: 0.5; }
+.sl-data { border: none; background: transparent; padding: 0; display: grid; justify-items: center; align-content: start; gap: 2px; }
+.sl-semana { font-size: 12px; font-weight: 600; color: var(--tinta-3); }
+.sl-num { font-family: var(--display); font-size: 20px; font-weight: 700; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; }
+.sl-dia.hoje .sl-num { background: var(--coral); color: #fff; }
+.sl-dia.hoje .sl-semana { color: var(--coral); }
+.sl-eventos { display: grid; gap: 6px; min-width: 0; align-content: start; }
+.sl-evento {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; width: 100%;
+  border: none; text-align: left; background: var(--superficie); border-radius: 12px; padding: 11px 12px 11px 14px;
+  box-shadow: inset 3px 0 0 var(--cor);
+}
+.sl-hora { font-weight: 600; font-size: 14px; color: var(--tinta-2); font-variant-numeric: tabular-nums; min-width: 42px; }
+.sl-titulo { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sl-par { width: 8px; height: 8px; border-radius: 50%; background: var(--cor); }
+.sl-livre { border: none; background: transparent; text-align: left; color: var(--tinta-3); font-size: 14px; padding: 9px 0; }
+.sl-dia.vazio { padding: 6px 0; align-items: center; }
+.sl-dia.vazio .sl-data { grid-auto-flow: column; gap: 6px; align-items: baseline; justify-content: start; }
+.sl-dia.vazio .sl-num { width: auto; height: auto; font-size: 16px; }
+.sl-dia.vazio.hoje .sl-num { width: 30px; height: 30px; font-size: 15px; }
+.sl-dia.vazio { grid-template-columns: 70px 1fr; }
+.sl-dia.vazio .sl-livre { padding: 4px 0; }
+.sl-fim { text-align: center; color: var(--tinta-3); font-size: 13px; padding: 24px 0; }
+
 /* ---------- grade da semana ---------- */
 .grade { display: flex; flex-direction: column; background: var(--superficie); border-radius: 20px; overflow-x: auto; overflow-y: hidden; height: calc(100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
 .grade-cabecalho, .grade-dia-inteiro, .grade-corpo { min-width: 636px; }

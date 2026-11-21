@@ -10,6 +10,7 @@ import PushButton from './PushButton.jsx';
 import WeekStrip from './WeekStrip.jsx';
 import DayView from './DayView.jsx';
 import WeekGrid from './WeekGrid.jsx';
+import WeekList from './WeekList.jsx';
 import EventModal from './EventModal.jsx';
 import QuickAdd from './QuickAdd.jsx';
 import InlineAdd from './InlineAdd.jsx';
@@ -35,7 +36,21 @@ function Icone({ d }) {
   );
 }
 
+// true no computador (tela larga), false no celular
+function useTelaLarga() {
+  const consulta = '(min-width: 900px)';
+  const [larga, setLarga] = useState(() => window.matchMedia(consulta).matches);
+  useEffect(() => {
+    const m = window.matchMedia(consulta);
+    const mudar = () => setLarga(m.matches);
+    m.addEventListener('change', mudar);
+    return () => m.removeEventListener('change', mudar);
+  }, []);
+  return larga;
+}
+
 export default function Agenda({ usuario }) {
+  const telaLarga = useTelaLarga();
   const [dia, setDia] = useState(() => inicioDoDia(new Date()));
   const semanaMs = inicioDaSemana(dia).getTime();
   const semana = useMemo(() => new Date(semanaMs), [semanaMs]);
@@ -218,19 +233,32 @@ export default function Agenda({ usuario }) {
           </div>
         )}
 
-        {aba === 'semana' && (
-          <div className="pagina-larga">
-            <WeekGrid
+        {aba === 'semana' &&
+          (telaLarga ? (
+            <div className="pagina-larga">
+              <WeekGrid
+                semana={semana}
+                eventos={visiveis}
+                livres={mostrarLivres ? livres : null}
+                corDe={corDe}
+                iniciaisDe={iniciaisDe}
+                onNovo={abrirNovo}
+                onAbrir={setModal}
+              />
+            </div>
+          ) : (
+            <WeekList
               semana={semana}
-              eventos={visiveis}
-              livres={mostrarLivres ? livres : null}
+              ocultas={ocultas}
               corDe={corDe}
-              iniciaisDe={iniciaisDe}
-              onNovo={abrirNovo}
+              agendaDe={agendaDe}
               onAbrir={setModal}
+              onAbrirDia={(d) => {
+                setDia(inicioDoDia(d));
+                setAba('dia');
+              }}
             />
-          </div>
-        )}
+          ))}
 
         {aba === 'juntos' && (
           <div className="pagina">
