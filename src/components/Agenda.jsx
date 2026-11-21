@@ -13,6 +13,7 @@ import EventModal from './EventModal.jsx';
 import QuickAdd from './QuickAdd.jsx';
 import InlineAdd from './InlineAdd.jsx';
 import TogetherView from './TogetherView.jsx';
+import AccountSheet from './AccountSheet.jsx';
 import AIPanel from './AIPanel.jsx';
 
 const fmtMesAno = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
@@ -266,25 +267,7 @@ export default function Agenda({ usuario }) {
         />
       )}
 
-      {menu && (
-        <div className="fundo-folha" onMouseDown={(e) => e.target === e.currentTarget && setMenu(false)}>
-          <div className="folha">
-            <span className="folha-alca" aria-hidden="true" />
-            <div className="conta">
-              <span className="avatar grande">{meuNome.slice(0, 1).toUpperCase()}</span>
-              <span>
-                <strong>{meuNome}</strong>
-                <small>{usuario.email}</small>
-              </span>
-            </div>
-            <div className="acoes">
-              <button className="btn" onClick={() => setMenu(false)}>Fechar</button>
-              <span className="espaco" />
-              <button className="btn perigo" onClick={() => supabase.auth.signOut()}>Sair da conta</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {menu && <AccountSheet usuario={usuario} nome={meuNome} avisar={avisar} onFechar={() => setMenu(false)} />}
 
       {modal && (
         <EventModal
