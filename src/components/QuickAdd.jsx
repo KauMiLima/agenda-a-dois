@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { interpretarTexto } from '../lib/parser.js';
 import { dataLonga, hora } from '../lib/dates.js';
+import { descreverRepeticao } from '../lib/recorrencia.js';
 
 const EXEMPLOS = ['jantar sexta 20h', 'cinema sábado das 19h às 21h30', 'dentista amanhã 14:30 por 45 min', 'aniversário 12/12'];
 
@@ -19,6 +20,7 @@ export default function QuickAdd({ agendas, agendaPadrao, onCriar, onDetalhes, o
     dia_inteiro: previa.diaInteiro,
     calendar_id: agendaId,
     lembrete_min: previa.diaInteiro ? null : 30,
+    ...(previa.repete ? { repete: previa.repete, repete_dias: previa.repeteDias } : {}),
   });
 
   async function enviar(e) {
@@ -49,6 +51,7 @@ export default function QuickAdd({ agendas, agendaPadrao, onCriar, onDetalhes, o
               <span>
                 {dataLonga(previa.inicio)}
                 {previa.diaInteiro ? ', dia todo' : `, ${hora(previa.inicio)} às ${hora(previa.fim)}`}
+                {previa.repete && `, ${descreverRepeticao(previa.repete, previa.repeteDias, previa.inicio)}`}
               </span>
             </>
           ) : (

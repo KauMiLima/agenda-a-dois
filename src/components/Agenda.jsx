@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { addDias, inicioDaSemana, inicioDoDia, dataLonga, hora, mesmoDia, DIA, HORA } from '../lib/dates.js';
 import { horariosLivres } from '../lib/freeTime.js';
+import { expandir, descreverRepeticao } from '../lib/recorrencia.js';
 import { useCalendars } from '../hooks/useCalendars.js';
 import { useEvents } from '../hooks/useEvents.js';
 import { useReminders } from '../hooks/useReminders.js';
@@ -14,7 +15,6 @@ import QuickAdd from './QuickAdd.jsx';
 import InlineAdd from './InlineAdd.jsx';
 import TogetherView from './TogetherView.jsx';
 import AccountSheet from './AccountSheet.jsx';
-import AIPanel from './AIPanel.jsx';
 
 const fmtMesAno = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
 const fmtMes = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
@@ -43,7 +43,7 @@ export default function Agenda({ usuario }) {
   const ate = useMemo(() => addDias(semana, 7), [semana]);
 
   const cal = useCalendars(usuario);
-  const { eventos, salvar, apagar } = useEvents(de, ate);
+  const { eventos, salvar, apagar, apagarOcorrencia } = useEvents(de, ate);
 
   // eventos das próximas 48h, para os lembretes funcionarem em qualquer semana
   const [agoraRef] = useState(() => new Date());
@@ -91,7 +91,8 @@ export default function Agenda({ usuario }) {
   }, [meuPerfil?.fuso]);
 
   const livres = useMemo(
-    () => (agendaLivre ? horariosLivres(ocupados, de, 7, opcoesLivre) : []),
+    // os ocupados podem ter eventos repetidos: calcula as vezes da semana antes
+    () => (agendaLivre ? horariosLivres(expandir(ocupados.map((o, i) => ({ ...o, id: `o${i}` })), de, ate), de, 7, opcoesLivre) : []),
     [ocupados, de, opcoesLivre, agendaLivre]
   );
 
@@ -129,7 +130,8 @@ export default function Agenda({ usuario }) {
       // pula para o dia do evento, para você ver onde ele foi parar
       setDia(inicioDoDia(new Date(ev.inicio)));
       setAba((a) => (a === 'semana' ? 'semana' : 'dia'));
-      avisar(`Adicionado: ${ev.titulo}, ${dataLonga(ev.inicio).toLowerCase()}${ev.dia_inteiro ? '' : ' às ' + hora(ev.inicio)}`);
+      const regra = ev.repete ? `, ${descreverRepeticao(ev.repete, ev.repete_dias, ev.inicio)}` : '';
+      avisar(`Adicionado: ${ev.titulo}, ${dataLonga(ev.inicio).toLowerCase()}${ev.dia_inteiro ? '' : ' às ' + hora(ev.inicio)}${regra}`);
     } catch (err) {
       avisar('Não foi possível adicionar: ' + err.message);
     }
@@ -258,7 +260,18 @@ export default function Agenda({ usuario }) {
 
         {aba === 'assistente' && (
           <div className="pagina">
-            <AIPanel de={de} ate={ate} agendaCompartilhadaId={agendaLivre?.id} livres={livres} onAdicionar={abrirNovo} />
+            <section className="cartao em-breve">
+              <span className="em-breve-selo">Em desenvolvimento</span>
+              <p className="explica">
+                Estamos preparando um assistente que vai olhar a agenda de vocês dois e ajudar a planejar a semana.
+              </p>
+              <ul className="em-breve-lista">
+                <li>Sugerir programas a dois nos horários em que vocês estão livres.</li>
+                <li>Organizar a semana e avisar quando ela estiver cheia demais.</li>
+                <li>Encaixar atividades, como treinos ou estudos, sem bater com outros compromissos.</li>
+              </ul>
+              <p className="dica">Por enquanto, use a escrita rápida na aba Dia e a lista de horários livres em Juntos.</p>
+            </section>
           </div>
         )}
       </div>
@@ -294,6 +307,7 @@ export default function Agenda({ usuario }) {
           perfis={cal.perfis}
           onSalvar={salvar}
           onApagar={apagar}
+          onApagarOcorrencia={apagarOcorrencia}
           onFechar={() => setModal(null)}
         />
       )}

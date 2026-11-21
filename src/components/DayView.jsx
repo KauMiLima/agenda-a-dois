@@ -80,7 +80,10 @@ export default function DayView({ dia, eventos, livres, corDe, agendaDe, autorDe
                   </span>
                   <span className="item-barra" aria-hidden="true" />
                   <span className="item-corpo">
-                    <strong>{ev.titulo}</strong>
+                    <strong>
+                      {ev.titulo}
+                      {ev.serie_id && <span className="repete-icone" title="Repete" aria-label="repete"> ↻</span>}
+                    </strong>
                     {(ev.local || agenda?.compartilhada) && (
                       <small>
                         {ev.local}

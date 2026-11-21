@@ -23,6 +23,49 @@ type Perfil = {
   silencio_inicio: number | null;
   silencio_fim: number | null;
 };
+type Evento = {
+  id: string; calendar_id: string; titulo: string; local: string | null;
+  inicio: string; fim: string; lembrete_min: number; lembrete_enviado_inicio: string | null;
+  repete: 'diario' | 'semanal' | 'mensal' | 'anual' | null; repete_dias: number[] | null;
+  repete_ate: string | null; excecoes: string[] | null; fuso: string | null;
+};
+
+// dia/mês/dia-da-semana de um instante, no fuso do evento
+function partes(ms: number, fuso: string) {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', { timeZone: fuso, year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })
+      .formatToParts(new Date(ms)).map((x) => [x.type, x.value])
+  );
+  const semana = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday);
+  return { chave: `${p.year}-${p.month}-${p.day}`, dia: Number(p.day), mes: Number(p.month), semana };
+}
+
+// vezes (início em ms) de um evento repetido entre `de` e `ate`
+function proximasVezes(ev: Evento, de: number, ate: number): number[] {
+  const fuso = ev.fuso || FUSO_PADRAO;
+  const base = Date.parse(ev.inicio);
+  const b = partes(base, fuso);
+  const excecoes = new Set(ev.excecoes ?? []);
+  const dias = ev.repete_dias?.length ? ev.repete_dias : [b.semana];
+  const saida: number[] = [];
+  let k = Math.max(0, Math.floor((de - base) / 864e5) - 1);
+  for (let i = 0; i < 10; i++, k++) {
+    const t = base + k * 864e5; // mesma hora todo dia
+    if (t > ate) break;
+    if (t < de) continue;
+    const p = partes(t, fuso);
+    if (ev.repete_ate && p.chave > ev.repete_ate) break;
+    if (excecoes.has(p.chave)) continue;
+    const cai =
+      ev.repete === 'diario' ||
+      (ev.repete === 'semanal' && dias.includes(p.semana)) ||
+      (ev.repete === 'mensal' && p.dia === b.dia) ||
+      (ev.repete === 'anual' && p.dia === b.dia && p.mes === b.mes);
+    if (cai) saida.push(t);
+  }
+  return saida;
+}
+
 type Inscricao = { id: string; user_id: string; endpoint: string; p256dh: string; auth: string };
 
 const fmtHora = (iso: string, fuso: string) =>
@@ -85,31 +128,39 @@ Deno.serve(async (req) => {
   let avisos = 0;
 
   // ---------- 1) LEMBRETES ----------
-  const { data: proximos } = await db
-    .from('events')
-    .select('id, calendar_id, titulo, local, inicio, lembrete_min, lembrete_enviado_inicio')
-    .eq('dia_inteiro', false)
-    .not('lembrete_min', 'is', null)
-    .gt('inicio', new Date(agora).toISOString())
-    .lte('inicio', new Date(agora + 2 * 24 * 3600e3).toISOString());
+  const janelaFim = agora + 2 * 24 * 3600e3;
+  const campos = 'id, calendar_id, titulo, local, inicio, fim, lembrete_min, lembrete_enviado_inicio, repete, repete_dias, repete_ate, excecoes, fuso';
+  const [{ data: normais }, { data: repetidos }] = await Promise.all([
+    db.from('events').select(campos).eq('dia_inteiro', false).not('lembrete_min', 'is', null).is('repete', null)
+      .gt('inicio', new Date(agora).toISOString()).lte('inicio', new Date(janelaFim).toISOString()),
+    db.from('events').select(campos).eq('dia_inteiro', false).not('lembrete_min', 'is', null).not('repete', 'is', null)
+      .lte('inicio', new Date(janelaFim).toISOString()),
+  ]);
 
-  for (const ev of proximos ?? []) {
-    const inicio = new Date(ev.inicio).getTime();
-    const jaEnviado = ev.lembrete_enviado_inicio && new Date(ev.lembrete_enviado_inicio).getTime() === inicio;
+  // cada evento vira a lista de vezes que começam entre agora e daqui a 2 dias
+  const vezes: { ev: Evento; inicio: number }[] = [];
+  for (const ev of (normais ?? []) as Evento[]) vezes.push({ ev, inicio: Date.parse(ev.inicio) });
+  for (const ev of (repetidos ?? []) as Evento[]) {
+    for (const t of proximasVezes(ev, agora, janelaFim)) vezes.push({ ev, inicio: t });
+  }
+
+  for (const { ev, inicio } of vezes) {
+    const jaEnviado = ev.lembrete_enviado_inicio && Date.parse(ev.lembrete_enviado_inicio) === inicio;
     if (jaEnviado || agora < inicio - ev.lembrete_min * 60e3) continue;
 
-    // marca antes de enviar, para nunca mandar duas vezes
-    await db.from('events').update({ lembrete_enviado_inicio: ev.inicio }).eq('id', ev.id);
+    // marca antes de enviar, para nunca mandar duas vezes (guarda QUAL vez foi avisada)
+    const inicioIso = new Date(inicio).toISOString();
+    await db.from('events').update({ lembrete_enviado_inicio: inicioIso }).eq('id', ev.id);
 
     const faltam = Math.max(1, Math.round((inicio - agora) / 60e3));
     for (const p of await perfisDe(await membrosDe(ev.calendar_id))) {
       if (!p.notif_lembretes) continue; // essa pessoa desligou os lembretes
       const fuso = p.fuso || FUSO_PADRAO;
-      const quando = faltam >= 60 * 20 ? `${fmtDia(ev.inicio, fuso)} às ${fmtHora(ev.inicio, fuso)}` : `às ${fmtHora(ev.inicio, fuso)}`;
+      const quando = faltam >= 60 * 20 ? `${fmtDia(inicioIso, fuso)} às ${fmtHora(inicioIso, fuso)}` : `às ${fmtHora(inicioIso, fuso)}`;
       lembretes += await enviarPara(p, {
         title: ev.titulo,
         body: `${quando}${faltam < 60 ? ` (em ${faltam} min)` : ''}${ev.local ? ', ' + ev.local : ''}`,
-        tag: `lembrete-${ev.id}`,
+        tag: `lembrete-${ev.id}-${inicioIso}`,
       });
     }
   }

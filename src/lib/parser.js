@@ -72,9 +72,48 @@ export function interpretarTexto(texto, agora = new Date()) {
   let dia = null;
   let dataExplicita = false;
 
-  // ---------- DATA ----------
+  // ---------- REPETIÇÃO ----------
+  // "toda segunda e quarta", "todo dia", "todo dia 5", "toda semana", "todo mês", "todo ano"
+  let repete = null;
+  let repeteDias = null;
   let x;
-  if ((x = r.achar(new RegExp(`${B}depois de amanha${E}`, 'u')))) {
+  const DIA_NOME = '(domingo|segunda|terca|quarta|quinta|sexta|sabado)s?(?:-feiras?)?';
+  const ORDEM = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+
+  if ((x = r.achar(new RegExp(`${B}(?:todo|todos os) dias? (\\d{1,2})${E}`, 'u')))) {
+    // "todo dia 5" = todo mês no dia 5
+    repete = 'mensal';
+    const d = Number(x.m[1]);
+    let cand = new Date(hoje.getFullYear(), hoje.getMonth(), d);
+    if (cand < hoje) cand = new Date(hoje.getFullYear(), hoje.getMonth() + 1, d);
+    dia = cand;
+    r.consumir(x);
+  } else if ((x = r.achar(new RegExp(`${B}(?:todo dia|todos os dias|diariamente)${E}`, 'u')))) {
+    repete = 'diario';
+    r.consumir(x);
+  } else if ((x = r.achar(new RegExp(`${B}(?:toda|todas as|todo|todos os) ${DIA_NOME}(?:(?:,\\s*|\\s+e\\s+)${DIA_NOME})*${E}`, 'u')))) {
+    const nomes = [...x.m[0].matchAll(new RegExp(DIA_NOME, 'gu'))].map((m) => m[1]);
+    repeteDias = [...new Set(nomes.map((n) => ORDEM.indexOf(n)))].sort((a, b) => a - b);
+    repete = 'semanal';
+    // primeira vez: o próximo desses dias (pode ser hoje)
+    const difs = repeteDias.map((d) => (d - hoje.getDay() + 7) % 7);
+    dia = addDias(hoje, Math.min(...difs));
+    r.consumir(x);
+  } else if ((x = r.achar(new RegExp(`${B}(?:toda semana|todas as semanas|semanalmente)${E}`, 'u')))) {
+    repete = 'semanal';
+    r.consumir(x);
+  } else if ((x = r.achar(new RegExp(`${B}(?:todo mes|todos os meses|mensalmente)${E}`, 'u')))) {
+    repete = 'mensal';
+    r.consumir(x);
+  } else if ((x = r.achar(new RegExp(`${B}(?:todo ano|todos os anos|anualmente)${E}`, 'u')))) {
+    repete = 'anual';
+    r.consumir(x);
+  }
+
+  // ---------- DATA ----------
+  if (dia) {
+    /* já veio da repetição */
+  } else if ((x = r.achar(new RegExp(`${B}depois de amanha${E}`, 'u')))) {
     dia = addDias(hoje, 2); r.consumir(x);
   } else if ((x = r.achar(new RegExp(`${B}amanha${E}`, 'u')))) {
     dia = addDias(hoje, 1); r.consumir(x);
@@ -190,6 +229,8 @@ export function interpretarTexto(texto, agora = new Date()) {
   titulo = titulo ? titulo[0].toUpperCase() + titulo.slice(1) : 'Novo evento';
 
   // ---------- MONTAGEM ----------
+  // "toda semana" sem dia escrito: repete no dia da semana da primeira vez
+  const diasDe = (inicio) => (repete === 'semanal' && !repeteDias ? [inicio.getDay()] : repeteDias);
   if (ini === null) {
     // sem hora => dia inteiro
     const d = dia || hoje;
@@ -200,6 +241,8 @@ export function interpretarTexto(texto, agora = new Date()) {
       diaInteiro: true,
       entendeu: Boolean(dia),
       temData: Boolean(dia),
+      repete,
+      repeteDias: diasDe(inicioDoDia(d)),
     };
   }
 
@@ -214,5 +257,5 @@ export function interpretarTexto(texto, agora = new Date()) {
     ? new Date(base.getTime() + fimMin * MIN)
     : new Date(inicio.getTime() + (duracao ?? HORA));
 
-  return { titulo, inicio, fim, diaInteiro: false, entendeu: true, dataExplicita, temData: Boolean(dia) };
+  return { titulo, inicio, fim, diaInteiro: false, entendeu: true, dataExplicita, temData: Boolean(dia), repete, repeteDias: diasDe(inicio) };
 }

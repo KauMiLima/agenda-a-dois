@@ -372,6 +372,20 @@ label.check { display: flex; align-items: center; gap: 8px; }
 .sugestao .quando { font-size: 13px; color: var(--tinta-2); }
 .sugestao p { margin: 0; font-size: 14px; color: var(--tinta-2); }
 
+/* ---------- repetição ---------- */
+.aviso-serie { margin: 0; font-size: 14px; color: var(--tinta-2); background: var(--fundo); border-radius: 12px; padding: 10px 12px; }
+.dias-semana { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.dias-semana button { height: 40px; border-radius: 12px; border: 1px solid var(--linha); background: var(--superficie); font-weight: 700; color: var(--tinta-2); }
+.dias-semana button.ativo { background: var(--tinta); border-color: var(--tinta); color: #fff; }
+.repete-icone { color: var(--tinta-3); font-weight: 500; }
+.regra { font-style: normal; color: var(--azul); font-weight: 600; }
+.apagar-serie { flex-direction: column; align-items: stretch; }
+.apagar-serie p { margin: 0 0 4px; font-size: 15px; color: var(--tinta); font-weight: 600; }
+
+/* ---------- assistente em breve ---------- */
+.em-breve-selo { justify-self: start; background: #fff4e0; color: #9a5b00; border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 700; }
+.em-breve-lista { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--tinta-2); font-size: 15px; }
+
 /* ---------- tela Juntos ---------- */
 .juntos-tela { display: grid; gap: 16px; }
 .cartao { background: var(--superficie); border-radius: 20px; padding: 20px; display: grid; gap: 14px; }

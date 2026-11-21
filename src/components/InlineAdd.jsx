@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { interpretarTexto } from '../lib/parser.js';
 import { dataLonga, hora, inicioDoDia, mesmoDia } from '../lib/dates.js';
+import { descreverRepeticao } from '../lib/recorrencia.js';
 
-const EXEMPLOS = ['almoço amanhã 12h', 'cinema sábado 19h às 21h', 'academia 7h por 1h30'];
+const EXEMPLOS = ['almoço amanhã 12h', 'cinema sábado 19h às 21h', 'academia toda segunda e quarta 7h'];
 
 // Campo da tela inicial: escreva o evento como fala e aperte Enter.
 // Se você não disser o dia, o evento vai para o dia que está aberto na tela.
@@ -43,6 +44,7 @@ export default function InlineAdd({ dia, agendas, agendaPadrao, onCriar }) {
       dia_inteiro: previa.diaInteiro,
       calendar_id: alvo.id,
       lembrete_min: previa.diaInteiro ? null : 30,
+      ...(previa.repete ? { repete: previa.repete, repete_dias: previa.repeteDias } : {}),
     });
     setTexto('');
     setEnviando(false);
@@ -95,6 +97,7 @@ export default function InlineAdd({ dia, agendas, agendaPadrao, onCriar }) {
           <span>
             <strong>{previa.titulo}</strong>, {dataLonga(previa.inicio).toLowerCase()}
             {previa.diaInteiro ? ', dia todo' : `, ${hora(previa.inicio)} às ${hora(previa.fim)}`}
+            {previa.repete && <em className="regra"> ↻ {descreverRepeticao(previa.repete, previa.repeteDias, previa.inicio)}</em>}
           </span>
           <button className="btn primario pequeno" disabled={enviando}>Adicionar</button>
         </div>
