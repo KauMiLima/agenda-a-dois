@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
+import PasswordField from './PasswordField.jsx';
+
+const TITULOS = {
+  entrar: 'A sua agenda e a de vocês dois, no mesmo lugar.',
+  cadastrar: 'Crie sua conta. Depois é só convidar seu par.',
+  recuperar: 'Digite o e-mail da sua conta. Enviamos um link para você criar uma senha nova.',
+};
 
 export default function Auth() {
-  const [modo, setModo] = useState('entrar'); // 'entrar' | 'cadastrar'
+  const [modo, setModo] = useState('entrar'); // 'entrar' | 'cadastrar' | 'recuperar'
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [verSenha, setVerSenha] = useState(false);
   const [msg, setMsg] = useState(null);
   const [carregando, setCarregando] = useState(false);
+
+  function irPara(novo) {
+    setModo(novo);
+    setMsg(null);
+  }
 
   async function enviar(e) {
     e.preventDefault();
@@ -26,6 +37,15 @@ export default function Auth() {
           setMsg({ tipo: 'ok', texto: 'Conta criada! Confirme pelo link que chegou no seu e-mail e depois entre.' });
           setModo('entrar');
         }
+      } else if (modo === 'recuperar') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: window.location.origin,
+        });
+        if (error) throw error;
+        setMsg({
+          tipo: 'ok',
+          texto: `Se ${email.trim()} tiver uma conta, o link chega em alguns minutos. Confira também a caixa de spam.`,
+        });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
         if (error) throw error;
@@ -37,6 +57,8 @@ export default function Auth() {
     }
   }
 
+  const textoBotao = { entrar: 'Entrar', cadastrar: 'Criar conta', recuperar: 'Enviar link' }[modo];
+
   return (
     <div className="auth">
       <div className="auth-card">
@@ -44,8 +66,8 @@ export default function Auth() {
           <span className="logo-dot a" />
           <span className="logo-dot b" />
         </div>
-        <h1>Agenda a Dois</h1>
-        <p className="sub">A sua agenda e a de vocês dois, no mesmo lugar.</p>
+        <h1>{modo === 'recuperar' ? 'Esqueceu a senha?' : 'Agenda a Dois'}</h1>
+        <p className="sub">{TITULOS[modo]}</p>
 
         <form onSubmit={enviar}>
           {modo === 'cadastrar' && (
@@ -56,44 +78,38 @@ export default function Auth() {
           )}
           <label>
             E-mail
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
           </label>
-          <label>
-            Senha
-            <span className="campo-senha">
-              <input
-                type={verSenha ? 'text' : 'password'}
+          {modo !== 'recuperar' && (
+            <label>
+              <span className="rotulo-senha">
+                Senha
+                {modo === 'entrar' && (
+                  <button type="button" className="link pequeno" onClick={() => irPara('recuperar')}>
+                    Esqueci minha senha
+                  </button>
+                )}
+              </span>
+              <PasswordField
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
-                required
-                minLength={6}
               />
-              <button
-                type="button"
-                className="ver-senha"
-                onClick={() => setVerSenha(!verSenha)}
-                aria-label={verSenha ? 'Esconder senha' : 'Mostrar senha'}
-                aria-pressed={verSenha}
-                title={verSenha ? 'Esconder senha' : 'Mostrar senha'}
-              >
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
-                  <circle cx="12" cy="12" r="3" />
-                  {verSenha && <path d="M4 20 20 4" />}
-                </svg>
-              </button>
-            </span>
-          </label>
-          {msg && <p className={`msg ${msg.tipo}`}>{msg.texto}</p>}
+            </label>
+          )}
+          {msg && <p className={`msg ${msg.tipo}`} role="status">{msg.texto}</p>}
           <button className="btn primario" disabled={carregando}>
-            {carregando ? 'Aguarde…' : modo === 'entrar' ? 'Entrar' : 'Criar conta'}
+            {carregando ? 'Aguarde…' : textoBotao}
           </button>
         </form>
 
-        <button className="link" onClick={() => setModo(modo === 'entrar' ? 'cadastrar' : 'entrar')}>
-          {modo === 'entrar' ? 'Ainda não tem conta? Cadastre-se' : 'Já tem conta? Entrar'}
-        </button>
+        {modo === 'recuperar' ? (
+          <button className="link" onClick={() => irPara('entrar')}>Lembrei a senha. Voltar para entrar</button>
+        ) : (
+          <button className="link" onClick={() => irPara(modo === 'entrar' ? 'cadastrar' : 'entrar')}>
+            {modo === 'entrar' ? 'Ainda não tem conta? Cadastre-se' : 'Já tem conta? Entrar'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -104,5 +120,7 @@ function traduzirErro(m) {
   if (/already registered/i.test(m)) return 'Esse e-mail já tem conta.';
   if (/Email not confirmed/i.test(m)) return 'Confirme seu e-mail antes de entrar.';
   if (/Password should be/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/not authorized/i.test(m)) return 'O envio de e-mails ainda não está liberado para esse endereço. Fale com quem administra o app.';
+  if (/rate limit|too many|security purposes/i.test(m)) return 'Muitos pedidos seguidos. Espere alguns minutos e tente de novo.';
   return m;
 }

@@ -642,3 +642,8 @@ details.ajustes:not(.cartao) { border-top: 1px solid var(--linha); padding-top: 
   border: none; background: transparent; color: var(--tinta-3); display: grid; place-items: center;
 }
 .ver-senha:hover, .ver-senha[aria-pressed='true'] { color: var(--tinta); background: var(--fundo); }
+
+/* ---------- esqueci minha senha ---------- */
+.rotulo-senha { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.rotulo-senha .link { text-decoration: none; color: var(--azul); font-weight: 600; }
+.rotulo-senha .link:hover { text-decoration: underline; }
