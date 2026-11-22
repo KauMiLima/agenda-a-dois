@@ -7,6 +7,8 @@ import { useCalendars } from '../hooks/useCalendars.js';
 import { useEvents } from '../hooks/useEvents.js';
 import { useReminders } from '../hooks/useReminders.js';
 import PushButton from './PushButton.jsx';
+import NotifPrompt from './NotifPrompt.jsx';
+import { usePush } from '../hooks/usePush.js';
 import WeekStrip from './WeekStrip.jsx';
 import DayView from './DayView.jsx';
 import WeekGrid from './WeekGrid.jsx';
@@ -91,7 +93,32 @@ export default function Agenda({ usuario }) {
   const [criando, setCriando] = useState(false);
   const [menu, setMenu] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const [pushAtivo, setPushAtivo] = useState(false);
+  const push = usePush();
+  const [notifAberto, setNotifAberto] = useState(false);
+  const chaveConvite = `agenda-convite-notif-${usuario.id}`;
+
+  // logo depois de entrar: se as notificações não estão ativas, convida (no máximo a cada 3 dias)
+  useEffect(() => {
+    if (push.estado !== 'ativar' && push.estado !== 'instalar') return;
+    let ultimo = 0;
+    try {
+      ultimo = Number(localStorage.getItem(chaveConvite) || 0);
+    } catch {
+      /* sem armazenamento: convida mesmo assim */
+    }
+    if (Date.now() - ultimo < 3 * DIA) return;
+    const id = setTimeout(() => setNotifAberto(true), 900);
+    return () => clearTimeout(id);
+  }, [push.estado]);
+
+  function adiarConvite() {
+    try {
+      localStorage.setItem(chaveConvite, String(Date.now()));
+    } catch {
+      /* tudo bem */
+    }
+    setNotifAberto(false);
+  }
 
   // ----- horários livres em comum -----
   const compartilhadas = cal.agendas.filter((a) => a.compartilhada);
@@ -155,7 +182,7 @@ export default function Agenda({ usuario }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4500);
   }, []);
 
-  useReminders(proximos, avisar, !pushAtivo);
+  useReminders(proximos, avisar, !push.ativo);
 
   const porId = useMemo(() => Object.fromEntries(cal.agendas.map((a) => [a.id, a])), [cal.agendas]);
   const agendaDe = (ev) => porId[ev.calendar_id];
@@ -271,7 +298,7 @@ export default function Agenda({ usuario }) {
             <h1>{aba === 'juntos' ? 'Juntos' : 'Assistente'}</h1>
           )}
           <div className="topo-acoes">
-            <PushButton avisar={avisar} onMudar={setPushAtivo} />
+            <PushButton push={push} onAbrir={() => setNotifAberto(true)} />
             <button className="avatar" onClick={() => setMenu(true)} aria-label="Sua conta">
               {meuNome.slice(0, 1).toUpperCase()}
             </button>
@@ -390,6 +417,16 @@ export default function Agenda({ usuario }) {
         )}
       </div>
 
+      {notifAberto && (
+        <NotifPrompt
+          push={push}
+          nomePar={nomePar}
+          avisar={avisar}
+          onFechar={() => setNotifAberto(false)}
+          onAgoraNao={adiarConvite}
+        />
+      )}
+
       {propondo && (
         <ProposalSheet
           inicial={propondo.inicial}
@@ -425,6 +462,11 @@ export default function Agenda({ usuario }) {
         <AccountSheet
           usuario={usuario}
           nome={meuNome}
+          push={push}
+          onAbrirNotif={() => {
+            setMenu(false);
+            setNotifAberto(true);
+          }}
           perfil={cal.perfis[usuario.id]}
           onPerfilSalvo={cal.recarregar}
           avisar={avisar}

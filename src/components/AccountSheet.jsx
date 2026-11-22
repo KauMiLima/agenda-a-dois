@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
 // Folha da conta: dados do usuário, trocar senha e sair
-export default function AccountSheet({ usuario, nome, perfil, onPerfilSalvo, avisar, onFechar }) {
+export default function AccountSheet({ usuario, nome, perfil, push, onAbrirNotif, onPerfilSalvo, avisar, onFechar }) {
   const [trocando, setTrocando] = useState(false);
   const [senha, setSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
@@ -40,7 +40,7 @@ export default function AccountSheet({ usuario, nome, perfil, onPerfilSalvo, avi
           </span>
         </div>
 
-        <Notificacoes usuario={usuario} perfil={perfil} onSalvo={onPerfilSalvo} avisar={avisar} />
+        <Notificacoes usuario={usuario} perfil={perfil} push={push} onAbrirNotif={onAbrirNotif} onSalvo={onPerfilSalvo} avisar={avisar} />
 
         {!trocando ? (
           <button className="opcao-conta" onClick={() => setTrocando(true)}>
@@ -106,7 +106,7 @@ export default function AccountSheet({ usuario, nome, perfil, onPerfilSalvo, avi
 const HORAS = Array.from({ length: 24 }, (_, h) => h);
 
 // Preferências de notificação DESTA pessoa (cada usuário tem as suas)
-function Notificacoes({ usuario, perfil, onSalvo, avisar }) {
+function Notificacoes({ usuario, perfil, push, onAbrirNotif, onSalvo, avisar }) {
   const [salvando, setSalvando] = useState(null);
   const pronto = perfil && perfil.notif_lembretes !== undefined;
 
@@ -127,7 +127,8 @@ function Notificacoes({ usuario, perfil, onSalvo, avisar }) {
   return (
     <section className="notif">
       <h3>Suas notificações</h3>
-      <p className="dica">Valem só para você. Seu par escolhe as próprias no celular.</p>
+      {push && <EstadoAparelho push={push} onAbrir={onAbrirNotif} />}
+      <p className="dica">Escolha o que receber. Vale só para você; seu par escolhe as próprias no celular.</p>
 
       <Interruptor
         titulo="Lembretes dos eventos"
@@ -167,6 +168,32 @@ function Notificacoes({ usuario, perfil, onSalvo, avisar }) {
         </div>
       )}
     </section>
+  );
+}
+
+// faixa que mostra se ESTE aparelho recebe notificações
+function EstadoAparelho({ push, onAbrir }) {
+  if (push.estado === 'carregando') return null;
+  const textos = {
+    ativo: ['Ativadas neste aparelho', 'Você recebe lembretes e avisos mesmo com o app fechado.', null],
+    ativar: ['Desativadas neste aparelho', 'Você não está recebendo lembretes nem avisos.', 'Ativar'],
+    instalar: ['Desativadas neste aparelho', 'No iPhone, instale o app na Tela de Início primeiro.', 'Como instalar'],
+    negado: ['Bloqueadas neste aparelho', 'A permissão foi negada nos ajustes.', 'Como liberar'],
+    'sem-suporte': ['Indisponíveis neste navegador', 'Use o Safari no iPhone ou o Chrome.', null],
+  }[push.estado];
+  return (
+    <div className={`estado-aparelho estado-${push.estado}`}>
+      <span className="estado-icone" aria-hidden="true">{push.estado === 'ativo' ? '✓' : '!'}</span>
+      <span>
+        <strong>{textos[0]}</strong>
+        <small>{textos[1]}</small>
+      </span>
+      {textos[2] && (
+        <button type="button" className={`btn pequeno ${push.estado === 'ativar' ? 'primario' : ''}`} onClick={onAbrir}>
+          {textos[2]}
+        </button>
+      )}
+    </div>
   );
 }
 
