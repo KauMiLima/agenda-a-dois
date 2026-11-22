@@ -114,7 +114,22 @@ src/
   lib/push.js                inscrição nas notificações push
 public/
   manifest.webmanifest, sw.js, icons/   o que torna o app instalável
-  components/                Agenda, WeekGrid, EventModal, QuickAdd e os painéis
+  components/
+    Agenda.jsx               tela principal com as abas (Dia, Semana, Juntos, Assistente)
+    DayView.jsx              o dia: número grande, faixa do casal e lista de eventos
+    CoupleStrip.jsx          faixa do casal (horários ocupados e livres dos dois)
+    WeekStrip.jsx            faixa com os 7 dias no topo
+    WeekList.jsx             semana em lista contínua (celular)
+    WeekGrid.jsx             semana em grade com horários (computador)
+    InlineAdd.jsx            escrita rápida na tela inicial
+    QuickAdd.jsx             folha do botão + (novo evento)
+    EventModal.jsx           janela de detalhes do evento
+    TogetherView.jsx         aba Juntos (convite, horários livres, agendas)
+    AccountSheet.jsx         conta: notificações, trocar senha, sair
+    PushButton.jsx           sino de notificações / instalar no iPhone
+    Auth.jsx                 entrar, cadastrar e "esqueci minha senha"
+    NewPassword.jsx          criar senha nova pelo link do e-mail
+    PasswordField.jsx        campo de senha com o olhinho
 ```
 
 ## Como funciona a privacidade
