@@ -6,6 +6,7 @@ export default function Auth() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [verSenha, setVerSenha] = useState(false);
   const [msg, setMsg] = useState(null);
   const [carregando, setCarregando] = useState(false);
 
@@ -39,12 +40,12 @@ export default function Auth() {
   return (
     <div className="auth">
       <div className="auth-card">
-        <div className="logo">
+        <div className="logo encontro" aria-hidden="true">
           <span className="logo-dot a" />
           <span className="logo-dot b" />
         </div>
         <h1>Agenda a Dois</h1>
-        <p className="sub">Uma agenda só sua e uma que vocês dividem.</p>
+        <p className="sub">A sua agenda e a de vocês dois, no mesmo lugar.</p>
 
         <form onSubmit={enviar}>
           {modo === 'cadastrar' && (
@@ -59,7 +60,30 @@ export default function Auth() {
           </label>
           <label>
             Senha
-            <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required minLength={6} />
+            <span className="campo-senha">
+              <input
+                type={verSenha ? 'text' : 'password'}
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                className="ver-senha"
+                onClick={() => setVerSenha(!verSenha)}
+                aria-label={verSenha ? 'Esconder senha' : 'Mostrar senha'}
+                aria-pressed={verSenha}
+                title={verSenha ? 'Esconder senha' : 'Mostrar senha'}
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+                  <circle cx="12" cy="12" r="3" />
+                  {verSenha && <path d="M4 20 20 4" />}
+                </svg>
+              </button>
+            </span>
           </label>
           {msg && <p className={`msg ${msg.tipo}`}>{msg.texto}</p>}
           <button className="btn primario" disabled={carregando}>

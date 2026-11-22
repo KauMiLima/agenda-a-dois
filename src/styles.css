@@ -5,14 +5,17 @@
    Figtree no texto.
    ===================================================================== */
 :root {
-  --fundo: #f3f4f8;
+  /* fundo: a mistura bem clara do azul (você) com o coral (seu par) */
+  --fundo: #f5f3fa;
   --superficie: #ffffff;
-  --linha: #e4e6ee;
-  --tinta: #1d2135;
+  --linha: #e6e3ef;
+  --tinta: #1b1e33;
   --tinta-2: #5e6378;
   --tinta-3: #9a9eb0;
-  --coral: #f0607a;
+  --coral: #ee5e7a;
   --azul: #4f6bed;
+  --voce: #4f6bed;
+  --par: #ee5e7a;
   --menta: #1f9d68;
   --menta-fundo: #e6f6ee;
   --raio: 16px;
@@ -194,10 +197,11 @@ label.check { display: flex; align-items: center; gap: 8px; }
 
 /* ---------- o dia ---------- */
 .dia { display: grid; gap: 18px; padding-top: 6px; }
-.dia-cabecalho { display: flex; align-items: center; gap: 14px; }
+.dia-cabecalho { display: flex; align-items: flex-end; gap: 14px; padding-top: 6px; }
+.dia-texto { padding-bottom: 4px; }
 .dia-num {
-  font-family: var(--display); font-weight: 800; font-size: 76px; line-height: 0.85;
-  letter-spacing: -0.04em; font-variation-settings: 'wdth' 85;
+  font-family: var(--display); font-weight: 800; font-size: 92px; line-height: 0.8;
+  letter-spacing: -0.05em; font-variation-settings: 'wdth' 75; font-variant-numeric: lining-nums;
 }
 .dia-texto { display: grid; line-height: 1.2; }
 .dia-texto strong { font-family: var(--display); font-size: 22px; font-weight: 700; }
@@ -445,9 +449,10 @@ details.ajustes:not(.cartao) { border-top: 1px solid var(--linha); padding-top: 
 .sl-eventos { display: grid; gap: 6px; min-width: 0; align-content: start; }
 .sl-evento {
   display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; width: 100%;
-  border: none; text-align: left; background: var(--superficie); border-radius: 12px; padding: 11px 12px 11px 14px;
+  border: none; text-align: left; background: transparent; border-radius: 12px; padding: 9px 12px 9px 14px;
   box-shadow: inset 3px 0 0 var(--cor);
 }
+.sl-evento:hover { background: var(--superficie); }
 .sl-hora { font-weight: 600; font-size: 14px; color: var(--tinta-2); font-variant-numeric: tabular-nums; min-width: 42px; }
 .sl-titulo { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sl-par { width: 8px; height: 8px; border-radius: 50%; background: var(--cor); }
@@ -535,3 +540,105 @@ details.ajustes:not(.cartao) { border-top: 1px solid var(--linha); padding-top: 
 @media (max-width: 899px) {
   .so-desktop { display: none; }
 }
+
+/* =====================================================================
+   Faixa do casal — o dia de vocês dois numa olhada
+   ===================================================================== */
+.casal-faixa { display: grid; gap: 12px; padding: 16px 16px 14px; background: var(--superficie); border-radius: 22px; }
+.cf-grade { display: grid; grid-template-columns: 24px 1fr; gap: 10px; }
+.cf-nomes { display: grid; grid-template-rows: 22px 22px; row-gap: 6px; }
+.cf-nomes span {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--cor); color: #fff;
+  font-size: 11px; font-weight: 700; display: grid; place-items: center;
+}
+.cf-area { position: relative; height: 72px; }
+.cf-trilho { position: absolute; left: 0; right: 0; height: 22px; }
+.cf-t1 { top: 0; }
+.cf-t2 { top: 28px; }
+.cf-trilho::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 2px; margin-top: -1px; border-radius: 2px; background: var(--linha); }
+.cf-bloco { position: absolute; top: 0; height: 22px; min-width: 10px; padding: 0; border: none; background: transparent; cursor: pointer; z-index: 2; }
+.cf-bloco::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 8px; margin-top: -4px; border-radius: 4px;
+  background: var(--cor); transition: height 0.12s, margin 0.12s;
+}
+.cf-bloco:hover::before, .cf-bloco.ativo::before, .cf-bloco:focus-visible::before { height: 14px; margin-top: -7px; border-radius: 7px; }
+.cf-livre {
+  position: absolute; top: -4px; height: 58px; padding: 0; border: none; border-radius: 10px; cursor: pointer; z-index: 1;
+  background: rgba(31, 157, 104, 0.13); box-shadow: inset 0 0 0 1px rgba(31, 157, 104, 0.28);
+  display: grid; place-items: center; transition: background 0.15s, box-shadow 0.15s;
+}
+.cf-mais {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--menta); color: #fff; font-size: 18px; font-weight: 700; line-height: 1;
+  display: grid; place-items: center; opacity: 0; transform: scale(0.7); transition: opacity 0.15s, transform 0.15s;
+}
+.cf-livre:hover, .cf-livre.ativo, .cf-livre:focus-visible { background: rgba(31, 157, 104, 0.26); box-shadow: inset 0 0 0 2px var(--menta); }
+.cf-livre:hover .cf-mais, .cf-livre.ativo .cf-mais, .cf-livre:focus-visible .cf-mais { opacity: 1; transform: none; }
+
+/* balão com o que é cada traço */
+.cf-balao {
+  position: absolute; bottom: calc(100% + 10px); z-index: 5; transform: translateX(-50%);
+  width: max-content; max-width: min(260px, 80vw); padding: 10px 12px; border-radius: 12px;
+  background: var(--tinta); color: #fff; font-size: 13px; line-height: 1.35; display: grid; gap: 4px;
+  box-shadow: 0 10px 24px -10px rgba(27, 30, 51, 0.6); pointer-events: none; animation: balao 0.12s ease-out;
+}
+.cf-balao.esq { transform: none; margin-left: -12px; }
+.cf-balao.dir { transform: translateX(-100%); margin-left: 12px; }
+.cf-balao strong { font-size: 13px; font-weight: 700; }
+.cf-balao ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+.cf-balao li span { color: #b9bdd6; font-variant-numeric: tabular-nums; margin-right: 4px; }
+.cf-balao li.privado { color: #b9bdd6; font-style: italic; }
+.cf-balao-dica { color: #b8ecd3; }
+@keyframes balao { from { opacity: 0; transform: translateX(-50%) translateY(4px); } }
+.cf-balao.esq, .cf-balao.dir { animation: none; }
+.cf-agora { position: absolute; top: -6px; height: 62px; width: 2px; margin-left: -1px; background: var(--tinta); border-radius: 2px; pointer-events: none; }
+.cf-agora::before { content: ''; position: absolute; top: -3px; left: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--tinta); }
+.cf-horas { position: absolute; left: 0; right: 0; top: 58px; height: 14px; }
+.cf-horas span { position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--tinta-3); font-variant-numeric: tabular-nums; }
+.cf-rodape { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 15px; color: var(--tinta-2); line-height: 1.35; }
+.cf-sem { color: var(--tinta-3); }
+.cf-marcar {
+  flex-shrink: 0; border: none; background: var(--menta); color: #fff; border-radius: 999px;
+  padding: 9px 14px; font-weight: 700; font-size: 14px; white-space: nowrap;
+}
+
+/* ---------- sino ---------- */
+.sino {
+  position: relative; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--linha);
+  background: var(--superficie); color: var(--tinta-2); display: grid; place-items: center; flex-shrink: 0;
+}
+.sino.pendente::after { content: ''; position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 2px var(--superficie); }
+.sino.bloqueado { color: var(--tinta-3); }
+
+/* ---------- aba ativa ---------- */
+.trilho-item svg { padding: 3px 12px; border-radius: 12px; box-sizing: content-box; transition: background 0.15s; }
+.trilho-item.ativo svg { background: #e9e4f6; }
+
+/* ---------- login: os dois círculos se encontram ---------- */
+.encontro .logo-dot.a { animation: vem-esquerda 0.9s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+.encontro .logo-dot.b { animation: vem-direita 0.9s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+@keyframes vem-esquerda { from { transform: translateX(-28px); opacity: 0; } }
+@keyframes vem-direita { from { transform: translateX(28px); opacity: 0; } }
+.auth-card h1 { font-size: 40px; letter-spacing: -0.02em; line-height: 1.05; }
+
+/* ---------- Juntos: horários livres em pílulas ---------- */
+.livres-dias { display: grid; gap: 4px; }
+.livre-dia { display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: start; padding: 8px 0; border-top: 1px solid var(--linha); }
+.livre-dia:first-child { border-top: none; }
+.livre-dia-nome { font-size: 14px; font-weight: 600; color: var(--tinta-2); padding-top: 7px; }
+.livre-pilulas { display: flex; flex-wrap: wrap; gap: 6px; }
+.pilula-livre {
+  display: inline-flex; align-items: baseline; gap: 6px; border: none; border-radius: 999px; padding: 7px 12px;
+  background: var(--menta-fundo); color: #11513a; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums;
+}
+.pilula-livre small { font-weight: 500; font-size: 12px; color: var(--menta); }
+.pilula-livre:hover { background: #d6f0e3; }
+.cartao { border-radius: 24px; }
+
+/* ---------- mostrar senha ---------- */
+.campo-senha { position: relative; display: block; }
+.campo-senha input { padding-right: 52px; }
+.ver-senha {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 10px;
+  border: none; background: transparent; color: var(--tinta-3); display: grid; place-items: center;
+}
+.ver-senha:hover, .ver-senha[aria-pressed='true'] { color: var(--tinta); background: var(--fundo); }

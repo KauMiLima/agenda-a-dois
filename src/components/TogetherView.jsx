@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { dataLonga, duracaoTexto, hora, mesmoDia, addDias } from '../lib/dates.js';
+import { duracaoTexto, hora, mesmoDia, addDias } from '../lib/dates.js';
 
 const CORES = ['#f0607a', '#f97316', '#14b8a6', '#8b5cf6', '#0ea5e9', '#eab308'];
 const fmtCurto = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long' });
+const fmtDiaCurto = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'numeric' });
 
 // Tela "Juntos": muda conforme a situação do casal
 // 1) ainda não tem agenda compartilhada  -> criar ou entrar com código
@@ -29,7 +30,7 @@ export default function TogetherView({
         <>
           <section className="cartao casal">
             <div className="casal-avatares" aria-hidden="true">
-              <span className="avatar">{meuNome.charAt(0).toUpperCase()}</span>
+              <span className="avatar" style={{ background: 'var(--voce)' }}>{meuNome.charAt(0).toUpperCase()}</span>
               <span className="avatar par" style={{ background: agendaCasal.cor }}>{nomePar.charAt(0).toUpperCase()}</span>
             </div>
             <div>
@@ -151,22 +152,24 @@ function Livres({ livres, semana, opcoes, setOpcoes, mostrarNaGrade, setMostrarN
     <section className="cartao">
       <h2>Quando vocês estão livres</h2>
       <p className="explica">
-        Horários de {fmtCurto.format(semana)} a {fmtCurto.format(fimSemana)} em que nenhum dos dois tem compromisso, contando também a agenda pessoal de cada um. Toque em um horário para marcar algo juntos.
+        De {fmtCurto.format(semana)} a {fmtCurto.format(fimSemana)}, sem compromisso para nenhum dos dois. Toque em um horário para marcar algo juntos.
       </p>
 
       {grupos.length === 0 ? (
         <p className="vazio-texto">Nenhum horário livre em comum nesta semana. Tente diminuir a duração mínima em "Ajustar".</p>
       ) : (
-        <div className="lista-livres">
+        <div className="livres-dias">
           {grupos.map((g) => (
-            <div key={g.dia.toISOString()}>
-              <p className="dia-livre">{dataLonga(g.dia)}</p>
-              {g.itens.map((l) => (
-                <button key={l.inicio.toISOString()} className="slot" onClick={() => onMarcar(l)}>
-                  <span>{hora(l.inicio)} às {hora(l.fim)}</span>
-                  <em>{duracaoTexto(l.fim - l.inicio)} livres</em>
-                </button>
-              ))}
+            <div key={g.dia.toISOString()} className="livre-dia">
+              <span className="livre-dia-nome">{fmtDiaCurto.format(g.dia).replace('.', '')}</span>
+              <div className="livre-pilulas">
+                {g.itens.map((l) => (
+                  <button key={l.inicio.toISOString()} className="pilula-livre" onClick={() => onMarcar(l)}>
+                    {hora(l.inicio)}–{hora(l.fim)}
+                    <small>{duracaoTexto(l.fim - l.inicio)}</small>
+                  </button>
+                ))}
+              </div>
             </div>
           ))}
         </div>

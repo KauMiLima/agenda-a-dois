@@ -1,9 +1,16 @@
 import { addDias, hora, inicioDoDia, mesmoDia, MIN } from '../lib/dates.js';
+import CoupleStrip from './CoupleStrip.jsx';
 
 const fmtNomeDia = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' });
-const fmtMes = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
 
 const maiuscula = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
+// "em 3 dias", "há 2 dias"
+function distancia(dia) {
+  const dias = Math.round((inicioDoDia(dia) - inicioDoDia(new Date())) / 86400000);
+  if (dias > 0) return dias === 1 ? 'em 1 dia' : `em ${dias} dias`;
+  return dias === -1 ? 'há 1 dia' : `há ${-dias} dias`;
+}
 
 function rotuloRelativo(dia) {
   const hoje = inicioDoDia(new Date());
@@ -14,7 +21,7 @@ function rotuloRelativo(dia) {
 }
 
 // Mostra UM dia: título grande, aviso de horário livre em comum e a lista de eventos
-export default function DayView({ dia, eventos, livres, corDe, agendaDe, autorDe, onAbrir, onNovo }) {
+export default function DayView({ dia, eventos, livres, casal, corDe, agendaDe, autorDe, onAbrir, onNovo }) {
   const ini = inicioDoDia(dia);
   const fim = addDias(ini, 1);
   const doDia = eventos
@@ -24,32 +31,27 @@ export default function DayView({ dia, eventos, livres, corDe, agendaDe, autorDe
   const relativo = rotuloRelativo(dia);
   const agora = new Date();
 
-  // o horário livre mais longo do dia
-  const melhorLivre = livresDoDia.reduce((m, l) => (!m || l.fim - l.inicio > m.fim - m.inicio ? l : m), null);
-
   return (
     <section className="dia" aria-live="polite">
       <header className="dia-cabecalho">
         <span className="dia-num">{dia.getDate()}</span>
         <span className="dia-texto">
           <strong>{relativo || maiuscula(fmtNomeDia.format(dia))}</strong>
-          <span>{relativo ? `${fmtNomeDia.format(dia)} ` : ''}de {fmtMes.format(dia)}</span>
+          <span>{relativo ? fmtNomeDia.format(dia) : distancia(dia)}</span>
         </span>
       </header>
 
-      {melhorLivre && (
-        <button
-          className="juntos"
-          onClick={() => onNovo({ inicio: melhorLivre.inicio, fim: new Date(Math.min(melhorLivre.fim, melhorLivre.inicio.getTime() + 60 * MIN)), compartilhar: true })}
-        >
-          <span className="juntos-icone" aria-hidden="true">
-            <i /><i />
-          </span>
-          <span>
-            Vocês estão livres das <b>{hora(melhorLivre.inicio)}</b> às <b>{hora(melhorLivre.fim)}</b>
-            <small>Toque para marcar algo juntos</small>
-          </span>
-        </button>
+      {casal && (
+        <CoupleStrip
+          dia={dia}
+          eu={casal.eu}
+          par={casal.par}
+          ocupados={casal.ocupados}
+          livres={livres}
+          eventos={eventos}
+          ehCompartilhado={(ev) => Boolean(agendaDe(ev)?.compartilhada)}
+          onMarcar={(l) => onNovo({ inicio: l.inicio, fim: new Date(Math.min(l.fim, l.inicio.getTime() + 60 * MIN)), compartilhar: true })}
+        />
       )}
 
       {doDia.length === 0 ? (

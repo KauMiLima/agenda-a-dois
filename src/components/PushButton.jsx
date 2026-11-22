@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ativarPush, desativarPush, ehIOS, estaInstalado, inscricaoAtual, suportaPush } from '../lib/push.js';
 
+function Sino() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 // Botão do topo: instala o app no iPhone e ativa as notificações.
+// Um pontinho coral avisa quando as notificações ainda não estão ligadas.
 export default function PushButton({ avisar, onMudar }) {
   const [estado, setEstado] = useState('carregando'); // carregando | instalar | ativar | ativo | negado | sem-suporte
   const [ajuda, setAjuda] = useState(false);
@@ -44,23 +53,23 @@ export default function PushButton({ avisar, onMudar }) {
   return (
     <>
       {estado === 'instalar' && (
-        <button className="btn pequeno destaque" onClick={() => setAjuda(true)}>
-          📲<span className="so-desktop"> Instalar app</span>
+        <button className="sino pendente" onClick={() => setAjuda(true)} aria-label="Instalar o app para receber notificações" title="Instalar o app para receber notificações">
+          <Sino />
         </button>
       )}
       {estado === 'ativar' && (
-        <button className="btn pequeno destaque" onClick={ativar}>
-          🔔<span className="so-desktop"> Ativar notificações</span>
+        <button className="sino pendente" onClick={ativar} aria-label="Ativar notificações" title="Ativar notificações">
+          <Sino />
         </button>
       )}
       {estado === 'ativo' && (
-        <button className="btn pequeno" onClick={desativar} title="Notificações ativas neste aparelho">
-          🔔<span className="so-desktop"> Ativas</span>
+        <button className="sino" onClick={desativar} aria-label="Notificações ativas neste aparelho" title="Notificações ativas neste aparelho">
+          <Sino />
         </button>
       )}
       {estado === 'negado' && (
-        <button className="btn pequeno" onClick={() => setAjuda(true)} title="Notificações bloqueadas">
-          🔕
+        <button className="sino bloqueado" onClick={() => setAjuda(true)} aria-label="Notificações bloqueadas" title="Notificações bloqueadas">
+          <Sino />
         </button>
       )}
 

@@ -105,10 +105,27 @@ export default function Agenda({ usuario }) {
     }
   }, [meuPerfil?.fuso]);
 
+  // horários ocupados da semana: calcula as repetições e ignora eventos de dia inteiro
+  // (um aniversário não deixa ninguém ocupado o dia todo)
+  const ocupadosSemana = useMemo(
+    () =>
+      expandir(
+        ocupados
+          .filter((o) => {
+            const a = new Date(o.inicio);
+            const diaInteiro = new Date(o.fim) - a >= DIA && a.getHours() === 0 && a.getMinutes() === 0;
+            return !diaInteiro;
+          })
+          .map((o, i) => ({ ...o, id: `o${i}` })),
+        de,
+        ate
+      ),
+    [ocupados, de, ate]
+  );
+
   const livres = useMemo(
-    // os ocupados podem ter eventos repetidos: calcula as vezes da semana antes
-    () => (agendaLivre ? horariosLivres(expandir(ocupados.map((o, i) => ({ ...o, id: `o${i}` })), de, ate), de, 7, opcoesLivre) : []),
-    [ocupados, de, opcoesLivre, agendaLivre]
+    () => (agendaLivre ? horariosLivres(ocupadosSemana, de, 7, opcoesLivre) : []),
+    [ocupadosSemana, de, opcoesLivre, agendaLivre]
   );
 
   // ----- utilidades -----
@@ -165,6 +182,18 @@ export default function Agenda({ usuario }) {
   const hoje = inicioDoDia(new Date());
   const ehEstaSemana = mesmoDia(inicioDaSemana(hoje), semana);
   const meuNome = cal.perfis[usuario.id]?.nome || usuario.email;
+
+  // dados da faixa do casal (só quando os dois estão na agenda compartilhada)
+  const parMembro = agendaLivre?.membros?.find((m) => m.user_id !== usuario.id);
+  const nomePar = parMembro ? cal.perfis[parMembro.user_id]?.nome || 'Par' : null;
+  const casal =
+    doisMembros && parMembro
+      ? {
+          eu: { id: usuario.id, nome: meuNome, inicial: meuNome.charAt(0).toUpperCase(), cor: 'var(--voce)' },
+          par: { id: parMembro.user_id, nome: nomePar, inicial: nomePar.charAt(0).toUpperCase(), cor: agendaLivre.cor || 'var(--par)' },
+          ocupados: ocupadosSemana,
+        }
+      : null;
 
   if (cal.carregando) return <div className="carregando">Carregando…</div>;
 
@@ -224,6 +253,7 @@ export default function Agenda({ usuario }) {
               dia={dia}
               eventos={visiveis}
               livres={doisMembros ? livres : []}
+              casal={casal}
               corDe={corDe}
               agendaDe={agendaDe}
               autorDe={autorDe}
