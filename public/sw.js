@@ -21,14 +21,17 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Tocar na notificação abre (ou traz para frente) o app
+// Tocar na notificação abre (ou traz para frente) o app, já na aba certa
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || '/';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
       for (const j of janelas) {
-        if ('focus' in j) return j.focus();
+        if ('focus' in j) {
+          j.postMessage({ abrir: url }); // o app troca para a aba pedida
+          return j.focus();
+        }
       }
       return self.clients.openWindow(url);
     })

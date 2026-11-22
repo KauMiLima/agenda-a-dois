@@ -119,7 +119,7 @@ export default function CoupleStrip({ dia, eu, par, ocupados, livres, eventos, e
                   e.pointerType === 'mouse' && abrir(chave, (pct(a) + pct(b)) / 2, `Livres das ${hora(l.inicio)} às ${hora(l.fim)}`, [], { livre: true })
                 }
                 onClick={() => onMarcar(l)}
-                aria-label={`Livres juntos das ${hora(l.inicio)} às ${hora(l.fim)}. Marcar algo.`}
+                aria-label={`Livres juntos das ${hora(l.inicio)} às ${hora(l.fim)}. Propor um programa.`}
               >
                 <span className="cf-mais" aria-hidden="true">+</span>
               </button>
@@ -158,7 +158,7 @@ export default function CoupleStrip({ dia, eu, par, ocupados, livres, eventos, e
             <div className={`cf-balao ${alinhamento} ${balao.livre ? 'livre' : ''}`} style={{ left: `${balao.pct}%` }} role="tooltip">
               <strong>{balao.titulo}</strong>
               {balao.livre ? (
-                <span className="cf-balao-dica">Clique para marcar algo juntos</span>
+                <span className="cf-balao-dica">Clique para propor um programa</span>
               ) : (
                 <ul>
                   {balao.itens.map((it) => (
@@ -177,7 +177,7 @@ export default function CoupleStrip({ dia, eu, par, ocupados, livres, eventos, e
         <span className={melhor ? '' : 'cf-sem'}>{descricao}</span>
         {melhor && (
           <button className="cf-marcar" onClick={() => onMarcar(melhor)}>
-            Marcar algo
+            Propor programa
           </button>
         )}
       </div>

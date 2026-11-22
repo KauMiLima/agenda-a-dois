@@ -21,7 +21,7 @@ function rotuloRelativo(dia) {
 }
 
 // Mostra UM dia: título grande, aviso de horário livre em comum e a lista de eventos
-export default function DayView({ dia, eventos, livres, casal, corDe, agendaDe, autorDe, onAbrir, onNovo }) {
+export default function DayView({ dia, eventos, livres, casal, corDe, agendaDe, autorDe, onAbrir, onNovo, onPropor, propostas = [], usuarioId, nomePar }) {
   const ini = inicioDoDia(dia);
   const fim = addDias(ini, 1);
   const doDia = eventos
@@ -29,6 +29,7 @@ export default function DayView({ dia, eventos, livres, casal, corDe, agendaDe, 
     .sort((a, b) => Number(b.dia_inteiro) - Number(a.dia_inteiro) || new Date(a.inicio) - new Date(b.inicio));
   const livresDoDia = livres.filter((l) => mesmoDia(new Date(l.inicio), dia));
   const relativo = rotuloRelativo(dia);
+  const propostasDoDia = propostas.filter((p) => new Date(p.inicio) < fim && new Date(p.fim) > ini);
   const agora = new Date();
 
   return (
@@ -50,11 +51,31 @@ export default function DayView({ dia, eventos, livres, casal, corDe, agendaDe, 
           livres={livres}
           eventos={eventos}
           ehCompartilhado={(ev) => Boolean(agendaDe(ev)?.compartilhada)}
-          onMarcar={(l) => onNovo({ inicio: l.inicio, fim: new Date(Math.min(l.fim, l.inicio.getTime() + 60 * MIN)), compartilhar: true })}
+          onMarcar={onPropor}
         />
       )}
 
-      {doDia.length === 0 ? (
+      {propostasDoDia.length > 0 && (
+        <ol className="lista">
+          {propostasDoDia.map((p) => (
+            <li key={p.id}>
+              <div className="item item-proposta">
+                <span className="item-hora">
+                  {hora(p.inicio)}
+                  <small>{hora(p.fim)}</small>
+                </span>
+                <span className="item-barra" aria-hidden="true" />
+                <span className="item-corpo">
+                  <strong>{p.titulo}</strong>
+                  <small>{p.criado_por === usuarioId ? `Proposta, esperando ${nomePar || 'seu par'}` : 'Proposta para você responder'}</small>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {doDia.length === 0 && propostasDoDia.length > 0 ? null : doDia.length === 0 ? (
         <div className="vazio">
           <p>Nada marcado.</p>
           <button className="btn" onClick={() => onNovo({ inicio: new Date(ini.getTime() + 19 * 60 * MIN), fim: new Date(ini.getTime() + 20 * 60 * MIN) })}>

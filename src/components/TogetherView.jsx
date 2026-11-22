@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ProposalCard from './ProposalCard.jsx';
 import { duracaoTexto, hora, mesmoDia, addDias } from '../lib/dates.js';
 
 const CORES = ['#f0607a', '#f97316', '#14b8a6', '#8b5cf6', '#0ea5e9', '#eab308'];
@@ -12,7 +13,7 @@ const fmtDiaCurto = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'n
 export default function TogetherView({
   usuario, agendas, perfis, ocultas, onAlternar,
   agendaCasal, setAgendaCasalId, livres, opcoes, setOpcoes, mostrarNaGrade, setMostrarNaGrade,
-  semana, onCriar, onEntrar, onSair, onApagar, onMarcar, avisar,
+  semana, onCriar, onEntrar, onSair, onApagar, onMarcar, avisar, propostas,
 }) {
   const compartilhadas = agendas.filter((a) => a.compartilhada);
   const membros = agendaCasal?.membros || [];
@@ -47,6 +48,10 @@ export default function TogetherView({
             )}
           </section>
 
+          {propostas?.disponivel && (
+            <Propostas usuario={usuario} perfis={perfis} propostas={propostas} nomePar={nomePar} onPropor={() => onMarcar()} />
+          )}
+
           <Livres
             livres={livres}
             semana={semana}
@@ -73,6 +78,43 @@ export default function TogetherView({
         temCasal={Boolean(agendaCasal)}
       />
     </div>
+  );
+}
+
+/* ---------- Propostas de programa ---------- */
+function Propostas({ usuario, perfis, propostas, nomePar, onPropor }) {
+  const historico = propostas.propostas
+    .filter((p) => p.status !== 'pendente')
+    .slice(0, 5)
+    .map((p) => ({ ...p, criado_por_mim: p.criado_por === usuario.id }));
+
+  return (
+    <section className="cartao">
+      <div className="titulo-com-acao">
+        <h2>Programas</h2>
+        <button className="btn primario pequeno" onClick={onPropor}>Propor um programa</button>
+      </div>
+      <p className="explica">Proponha algo para fazerem juntos. {nomePar} aceita, sugere outro horário ou avisa que não pode.</p>
+
+      {propostas.paraResponder.length > 0 && (
+        <p className="aviso-propostas">
+          Você tem {propostas.paraResponder.length === 1 ? '1 proposta' : `${propostas.paraResponder.length} propostas`} para responder na aba Dia.
+        </p>
+      )}
+
+      {propostas.aguardando.map((p) => (
+        <ProposalCard key={p.id} proposta={p} tipo="aguardar" nomePar={nomePar} onCancelar={() => propostas.cancelar(p.id)} />
+      ))}
+
+      {historico.length > 0 && (
+        <details className="ajustes">
+          <summary>Respondidas recentemente</summary>
+          {historico.map((p) => (
+            <ProposalCard key={p.id} proposta={p} tipo="historico" nomePar={nomePar} nomeAutor={perfis[p.criado_por]?.nome || 'Seu par'} />
+          ))}
+        </details>
+      )}
+    </section>
   );
 }
 
@@ -152,7 +194,7 @@ function Livres({ livres, semana, opcoes, setOpcoes, mostrarNaGrade, setMostrarN
     <section className="cartao">
       <h2>Quando vocês estão livres</h2>
       <p className="explica">
-        De {fmtCurto.format(semana)} a {fmtCurto.format(fimSemana)}, sem compromisso para nenhum dos dois. Toque em um horário para marcar algo juntos.
+        De {fmtCurto.format(semana)} a {fmtCurto.format(fimSemana)}, sem compromisso para nenhum dos dois. Toque em um horário para propor um programa.
       </p>
 
       {grupos.length === 0 ? (

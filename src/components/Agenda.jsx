@@ -16,6 +16,9 @@ import QuickAdd from './QuickAdd.jsx';
 import InlineAdd from './InlineAdd.jsx';
 import TogetherView from './TogetherView.jsx';
 import AccountSheet from './AccountSheet.jsx';
+import ProposalSheet from './ProposalSheet.jsx';
+import ProposalCard from './ProposalCard.jsx';
+import { useProposals } from '../hooks/useProposals.js';
 
 const fmtMesAno = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
 const fmtMes = new Intl.DateTimeFormat('pt-BR', { month: 'long' });
@@ -65,7 +68,24 @@ export default function Agenda({ usuario }) {
   const ateLembretes = useMemo(() => new Date(agoraRef.getTime() + 2 * DIA), [agoraRef]);
   const { eventos: proximos } = useEvents(agoraRef, ateLembretes);
 
-  const [aba, setAba] = useState('dia');
+  const [aba, setAba] = useState(() => {
+    const pedida = new URLSearchParams(window.location.search).get('aba');
+    if (pedida) window.history.replaceState(null, '', window.location.pathname);
+    return ['dia', 'semana', 'juntos', 'assistente'].includes(pedida) ? pedida : 'dia';
+  });
+  const prop = useProposals(usuario);
+  const [propondo, setPropondo] = useState(null); // { inicial } ou { contra }
+
+  // tocar numa notificação com o app já aberto: o service worker avisa qual aba abrir
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const ouvir = (e) => {
+      const pedida = e.data?.abrir && new URL(e.data.abrir, window.location.origin).searchParams.get('aba');
+      if (pedida) setAba(pedida);
+    };
+    navigator.serviceWorker.addEventListener('message', ouvir);
+    return () => navigator.serviceWorker.removeEventListener('message', ouvir);
+  }, []);
   const [ocultas, setOcultas] = useState(new Set());
   const [modal, setModal] = useState(null);
   const [criando, setCriando] = useState(false);
@@ -156,6 +176,14 @@ export default function Agenda({ usuario }) {
     });
   }
 
+  // propor um programa no horário livre (ou criar direto, se o recurso ainda não estiver no banco)
+  function propor(slot) {
+    const inicio = slot?.inicio ? new Date(slot.inicio) : new Date(dia.getTime() + 19 * HORA);
+    const fim = slot?.fim ? new Date(Math.min(new Date(slot.fim), inicio.getTime() + 2 * HORA)) : new Date(inicio.getTime() + 2 * HORA);
+    if (!prop.disponivel || !agendaLivre) return abrirNovo({ inicio, fim, compartilhar: true });
+    setPropondo({ inicial: { inicio, fim } });
+  }
+
   async function criarRapido(ev) {
     try {
       await salvar(ev);
@@ -218,6 +246,11 @@ export default function Agenda({ usuario }) {
             >
               <Icone d={a.icone} />
               <span>{a.nome}</span>
+              {a.id === 'dia' && prop.paraResponder.length > 0 && (
+                <em className="trilho-contador" aria-label={`${prop.paraResponder.length} propostas para responder`}>
+                  {prop.paraResponder.length}
+                </em>
+              )}
             </button>
           )
         )}
@@ -249,6 +282,24 @@ export default function Agenda({ usuario }) {
           <div className="pagina">
             <WeekStrip semana={semana} dia={dia} eventos={visiveis} corDe={corDe} onEscolher={setDia} />
             <InlineAdd dia={dia} agendas={cal.agendas} agendaPadrao={pessoal?.id} onCriar={criarRapido} />
+            {prop.paraResponder.map((p) => (
+              <ProposalCard
+                key={p.id}
+                proposta={p}
+                tipo="receber"
+                nomeAutor={cal.perfis[p.criado_por]?.nome || 'Seu par'}
+                nomePar={nomePar}
+                onAceitar={async () => {
+                  await prop.aceitar(p.id);
+                  avisar(`Combinado: ${p.titulo} está na agenda de vocês.`);
+                }}
+                onOutroHorario={() => setPropondo({ contra: p })}
+                onRecusar={async (recado) => {
+                  await prop.recusar(p.id, recado);
+                  avisar(`${cal.perfis[p.criado_por]?.nome || 'Seu par'} vai saber que você não pode.`);
+                }}
+              />
+            ))}
             <DayView
               dia={dia}
               eventos={visiveis}
@@ -259,6 +310,10 @@ export default function Agenda({ usuario }) {
               autorDe={autorDe}
               onAbrir={setModal}
               onNovo={abrirNovo}
+              onPropor={propor}
+              propostas={[...prop.paraResponder, ...prop.aguardando]}
+              usuarioId={usuario.id}
+              nomePar={nomePar}
             />
           </div>
         )}
@@ -310,8 +365,9 @@ export default function Agenda({ usuario }) {
               onEntrar={cal.entrarComCodigo}
               onSair={cal.sair}
               onApagar={cal.apagar}
-              onMarcar={(l) => abrirNovo({ inicio: l.inicio, fim: new Date(Math.min(l.fim, l.inicio.getTime() + HORA)), compartilhar: true })}
+              onMarcar={propor}
               avisar={avisar}
+              propostas={prop}
             />
           </div>
         )}
@@ -333,6 +389,24 @@ export default function Agenda({ usuario }) {
           </div>
         )}
       </div>
+
+      {propondo && (
+        <ProposalSheet
+          inicial={propondo.inicial}
+          contra={propondo.contra}
+          nomePar={nomePar || 'Seu par'}
+          onFechar={() => setPropondo(null)}
+          onEnviar={async (dados) => {
+            if (propondo.contra) {
+              await prop.contrapropor(propondo.contra.id, dados);
+              avisar(`Outro horário enviado para ${nomePar}.`);
+            } else {
+              await prop.propor({ ...dados, calendar_id: agendaLivre.id });
+              avisar(`Proposta enviada para ${nomePar}.`);
+            }
+          }}
+        />
+      )}
 
       {criando && (
         <QuickAdd

@@ -249,6 +249,7 @@ label.check { display: flex; align-items: center; gap: 8px; }
   animation: escurecer 0.2s ease-out;
 }
 .folha, .modal {
+  overflow-x: hidden;
   width: min(560px, 100%); max-height: calc(var(--vv-altura, 100dvh) - 12px); overflow-y: auto; overscroll-behavior: contain;
   background: var(--superficie); border-radius: 24px 24px 0 0;
   padding: 10px 20px calc(20px + env(safe-area-inset-bottom));
@@ -312,11 +313,12 @@ label.check { display: flex; align-items: center; gap: 8px; }
 
 /* ---------- janela do evento: cabe na tela do celular ---------- */
 .modal { padding-bottom: 0; gap: 12px; overflow-x: hidden; }
-.modal > *, .linha-2 > *, .modal label { min-width: 0; }
-.modal input[type='datetime-local'], .modal input[type='date'] {
+.modal > *, .folha > *, .linha-2 > *, .modal label, .folha label { min-width: 0; }
+.modal input[type='datetime-local'], .modal input[type='date'],
+.folha input[type='datetime-local'], .folha input[type='date'] {
   -webkit-appearance: none; appearance: none; display: block; width: 100%; min-width: 0; min-height: 46px; text-align: left;
 }
-.modal input::-webkit-date-and-time-value { text-align: left; }
+.modal input::-webkit-date-and-time-value, .folha input::-webkit-date-and-time-value { text-align: left; }
 .modal .acoes {
   position: sticky; bottom: 0; z-index: 2; margin: 4px -20px 0; background: var(--superficie);
   padding: 12px 20px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--linha);
@@ -328,7 +330,7 @@ label.check { display: flex; align-items: center; gap: 8px; }
 .mais-campos > summary::before { content: '+'; width: 22px; height: 22px; border-radius: 50%; background: var(--fundo); display: grid; place-items: center; font-size: 16px; }
 .mais-campos[open] > summary::before { content: '−'; }
 @media (max-width: 520px) {
-  .modal .linha-2 { grid-template-columns: 1fr; gap: 12px; }
+  .modal .linha-2, .folha .linha-2 { grid-template-columns: 1fr; gap: 12px; }
 }
 
 @keyframes subir { from { transform: translateY(40px); opacity: 0; } }
@@ -647,3 +649,43 @@ details.ajustes:not(.cartao) { border-top: 1px solid var(--linha); padding-top: 
 .rotulo-senha { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .rotulo-senha .link { text-decoration: none; color: var(--azul); font-weight: 600; }
 .rotulo-senha .link:hover { text-decoration: underline; }
+
+/* =====================================================================
+   Propostas de programa
+   ===================================================================== */
+.proposta {
+  display: grid; gap: 6px; padding: 16px; border-radius: 20px; background: var(--superficie);
+  border: 2px solid color-mix(in srgb, var(--par) 35%, transparent);
+}
+.proposta-aguardar { border-style: dashed; border-color: var(--linha); }
+.proposta-historico { border: none; background: var(--fundo); padding: 12px 14px; margin-top: 8px; }
+.proposta-quem { margin: 0; font-size: 13px; font-weight: 700; color: var(--par); }
+.proposta-aguardar .proposta-quem, .proposta-historico .proposta-quem { color: var(--tinta-3); }
+.proposta-historico.status-aceita .proposta-quem { color: var(--menta); }
+.proposta h3 { font-size: 22px; }
+.proposta-historico h3 { font-size: 17px; }
+.proposta-quando { margin: 0; font-size: 15px; color: var(--tinta-2); }
+.proposta-recado { margin: 2px 0 0; font-size: 15px; color: var(--tinta); font-style: italic; }
+.proposta-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.proposta-recusa { display: grid; gap: 8px; margin-top: 4px; }
+.btn-texto { border-color: transparent; background: transparent; color: var(--tinta-2); }
+.btn-texto:hover { background: var(--fundo); }
+
+.item-proposta { cursor: default; }
+.item-proposta .item-barra { background: repeating-linear-gradient(to bottom, var(--par) 0 5px, transparent 5px 9px); }
+.item-proposta strong { color: var(--tinta-2); }
+.item-proposta .item-corpo small { color: var(--par); font-weight: 600; }
+
+.titulo-com-acao { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.aviso-propostas { margin: 0; padding: 10px 12px; border-radius: 12px; background: #fde9ed; color: #a32646; font-size: 14px; font-weight: 600; }
+
+.ideias-programa { display: flex; flex-wrap: wrap; gap: 6px; }
+.ideias-programa button { border: 1px solid var(--linha); background: var(--superficie); border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--tinta-2); }
+.ideias-programa button.ativa { border-color: var(--par); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--par); }
+
+.trilho-item { position: relative; }
+.trilho-contador {
+  position: absolute; top: 2px; left: 50%; margin-left: 8px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--par); color: #fff; font-style: normal; font-size: 11px; font-weight: 700; display: grid; place-items: center;
+  box-shadow: 0 0 0 2px var(--superficie);
+}

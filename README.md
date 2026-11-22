@@ -8,6 +8,7 @@ Agenda inteligente com uma agenda **pessoal** para cada um e uma agenda **compar
 - 🔔 **Notificações push**: lembrete antes de cada evento e aviso quando seu par cria algo na agenda de vocês, mesmo com o app fechado.
 - 📲 **Instalável no iPhone** (PWA), sem App Store.
 - 🤖 **Assistente com IA**: sugere programas a dois, organiza a semana e encaixa atividades nos horários livres.
+- 💌 **Propor um programa**: sugira algo num horário livre; seu par aceita, pede outro horário ou avisa que não pode.
 - ⚡ **Tempo real**: quando um cria ou edita um evento, a tela do outro atualiza sozinha.
 
 Stack: React 18 + Vite (PWA), Supabase (Auth, Postgres com RLS, Realtime, Edge Functions, pg_cron), Web Push e a API do Claude.
@@ -73,7 +74,7 @@ As notificações são enviadas pelo servidor: a cada minuto o Supabase verifica
 
 ### Passo a passo
 
-1. **Banco:** no SQL Editor, rode `supabase/push.sql` depois `supabase/notificacoes.sql` (preferências de cada usuário) e `supabase/recorrencia.sql` (eventos que se repetem).
+1. **Banco:** no SQL Editor, rode `supabase/push.sql` depois `supabase/notificacoes.sql` (preferências de cada usuário) `supabase/recorrencia.sql` (eventos que se repetem) e `supabase/propostas.sql` (propor um programa).
 2. **Segredos e funções** (no terminal, na pasta do projeto):
    ```bash
    npx supabase login

@@ -194,5 +194,58 @@ Deno.serve(async (req) => {
     }
   }
 
-  return new Response(JSON.stringify({ lembretes, avisos }), { headers: { 'Content-Type': 'application/json' } });
+  // ---------- 3) PROPOSTAS DE PROGRAMA ----------
+  let propostas = 0;
+
+  // 3a) proposta nova (ou "outro horário"): avisa o par
+  const { data: novasPropostas } = await db
+    .from('propostas')
+    .select('id, calendar_id, criado_por, titulo, inicio, mensagem, proposta_pai')
+    .eq('aviso_enviado', false)
+    .eq('status', 'pendente')
+    .limit(50);
+
+  for (const pr of novasPropostas ?? []) {
+    await db.from('propostas').update({ aviso_enviado: true }).eq('id', pr.id);
+    const perfis = await perfisDe(await membrosDe(pr.calendar_id));
+    const autor = perfis.find((p) => p.id === pr.criado_por)?.nome ?? 'Seu par';
+    for (const p of perfis) {
+      if (p.id === pr.criado_por || !p.notif_par || emSilencio(p)) continue;
+      const fuso = p.fuso || FUSO_PADRAO;
+      propostas += await enviarPara(p, {
+        title: pr.proposta_pai ? `${autor} sugeriu outro horário` : `${autor} propôs um programa`,
+        body: `${pr.titulo}, ${fmtDia(pr.inicio, fuso)} às ${fmtHora(pr.inicio, fuso)}.${pr.mensagem ? ` "${pr.mensagem}"` : ''} Toque para responder.`,
+        tag: `proposta-${pr.id}`,
+        url: '/?aba=dia',
+      });
+    }
+  }
+
+  // 3b) resposta (aceitou / não pode): avisa quem propôs
+  const { data: respondidas } = await db
+    .from('propostas')
+    .select('id, criado_por, respondida_por, titulo, inicio, status, resposta')
+    .eq('aviso_resposta_enviado', false)
+    .in('status', ['aceita', 'recusada'])
+    .limit(50);
+
+  for (const pr of respondidas ?? []) {
+    await db.from('propostas').update({ aviso_resposta_enviado: true }).eq('id', pr.id);
+    const [quemPropos] = await perfisDe([pr.criado_por]);
+    const [quemRespondeu] = await perfisDe([pr.respondida_por]);
+    if (!quemPropos || !quemPropos.notif_par) continue; // respostas contam como "avisos do par"
+    const fuso = quemPropos.fuso || FUSO_PADRAO;
+    const nome = quemRespondeu?.nome ?? 'Seu par';
+    propostas += await enviarPara(quemPropos, {
+      title: pr.status === 'aceita' ? `${nome} aceitou: ${pr.titulo}` : `${nome} não pode: ${pr.titulo}`,
+      body:
+        pr.status === 'aceita'
+          ? `Está na agenda de vocês: ${fmtDia(pr.inicio, fuso)} às ${fmtHora(pr.inicio, fuso)}.`
+          : pr.resposta ? `"${pr.resposta}"` : 'Que tal propor outro horário?',
+      tag: `resposta-${pr.id}`,
+      url: '/?aba=juntos',
+    });
+  }
+
+  return new Response(JSON.stringify({ lembretes, avisos, propostas }), { headers: { 'Content-Type': 'application/json' } });
 });
